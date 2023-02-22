@@ -143,7 +143,17 @@ def train_epoch(epoch, data_loader, model, optimizer, ema_optimizer, criterion, 
             acc = torch.sum(output_actions == actions)
             act_acc.append(acc)
            
-            loss = sub_loss + act_loss + sv_contrastive_loss + sa_contrastive_loss + subqloss + actqloss
+            #loss = sub_loss + act_loss + sv_contrastive_loss + sa_contrastive_loss + subqloss + actqloss
+            
+            #loss = act_loss + sa_contrastive_loss + actqloss # no view
+            #loss = sub_loss + act_loss + subqloss + actqloss # no contrast
+            #loss = sub_loss + act_loss + sv_contrastive_loss + sa_contrastive_loss # no ortho
+            #loss = sv_contrastive_loss + sa_contrastive_loss + subqloss + actqloss # no CE 
+            
+            loss = sub_loss + act_loss + sv_contrastive_loss + subqloss + actqloss # no action contrast
+            #loss = sub_loss + act_loss + sa_contrastive_loss + subqloss + actqloss # no view contrast
+            
+            
 
             if 3 < i < 5:
                 act = torch.stack([acc for acc in act_acc])
@@ -254,27 +264,27 @@ def val_epoch(cfg, epoch, data_loader, model, writer, use_cuda, args, action_fla
         
         
     if args.dataset == 'ntu_rgbd_120' or args.dataset == 'ntu_rgbd_60':
-        probe_seqs = [
-                        ['R002_C001_S026', 'R002_C001_S027', 'R002_C001_S028', 'R002_C001_S029', 'R002_C001_S030', 'R002_C001_S031', 'R002_C001_S032'], 
-                        ['R002_C002_S026', 'R002_C002_S027', 'R002_C002_S028', 'R002_C002_S029', 'R002_C002_S030', 'R002_C002_S031', 'R002_C002_S032'], 
-                        ['R002_C003_S026', 'R002_C003_S027', 'R002_C003_S028', 'R002_C003_S029', 'R002_C003_S030', 'R002_C003_S031', 'R002_C003_S032']
-                     ]
-        gallery_seqs = [
-                        ['R001_C001_S026', 'R001_C001_S027', 'R001_C001_S028', 'R001_C001_S029', 'R001_C001_S030', 'R001_C001_S031', 'R001_C001_S032', 
-                         'R001_C002_S026', 'R001_C002_S027', 'R001_C002_S028', 'R001_C002_S029', 'R001_C002_S030', 'R001_C002_S031', 'R001_C002_S032', 
-                         'R001_C003_S026', 'R001_C003_S027', 'R001_C003_S028', 'R001_C003_S029', 'R001_C003_S030', 'R001_C003_S031', 'R001_C003_S032'
-                        ]
-                       ]
-        feature, seq_type, action, label = [], [], [], []
-        for key in results.keys():
-            _label, s_num, _cam_id, rep_num, _action = key.split('_')
-            label.append(_label)
-            seq_type.append('_'.join([rep_num, _cam_id, s_num]))
-            action.append(_action)
-            _feature = results[key]
-            feature.append(_feature)
-        feature = np.array(feature).squeeze()
-        label = np.array(label)
+#        probe_seqs = [
+#                        ['R002_C001_S026', 'R002_C001_S027', 'R002_C001_S028', 'R002_C001_S029', 'R002_C001_S030', 'R002_C001_S031', 'R002_C001_S032'], 
+#                        ['R002_C002_S026', 'R002_C002_S027', 'R002_C002_S028', 'R002_C002_S029', 'R002_C002_S030', 'R002_C002_S031', 'R002_C002_S032'], 
+#                        ['R002_C003_S026', 'R002_C003_S027', 'R002_C003_S028', 'R002_C003_S029', 'R002_C003_S030', 'R002_C003_S031', 'R002_C003_S032']
+#                     ]
+#        gallery_seqs = [
+#                        ['R001_C001_S026', 'R001_C001_S027', 'R001_C001_S028', 'R001_C001_S029', 'R001_C001_S030', 'R001_C001_S031', 'R001_C001_S032', 
+#                         'R001_C002_S026', 'R001_C002_S027', 'R001_C002_S028', 'R001_C002_S029', 'R001_C002_S030', 'R001_C002_S031', 'R001_C002_S032', 
+#                         'R001_C003_S026', 'R001_C003_S027', 'R001_C003_S028', 'R001_C003_S029', 'R001_C003_S030', 'R001_C003_S031', 'R001_C003_S032'
+#                        ]
+#                       ]
+#        feature, seq_type, action, label = [], [], [], []
+#        for key in results.keys():
+#            _label, s_num, _cam_id, rep_num, _action = key.split('_')
+#            label.append(_label)
+#            seq_type.append('_'.join([rep_num, _cam_id, s_num]))
+#            action.append(_action)
+#            _feature = results[key]
+#            feature.append(_feature)
+#        feature = np.array(feature).squeeze()
+#        label = np.array(label)
         
         #accuracy = compute_metric2(feature, label, action, seq_type, probe_seqs, gallery_seqs)
         #top_1_accuracy = np.mean(accuracy[:, :, :, 0])
@@ -297,13 +307,12 @@ def val_epoch(cfg, epoch, data_loader, model, writer, use_cuda, args, action_fla
             feature.append(_feature)
         feature = np.array(feature).squeeze()
         label = np.array(label)
-        accuracy = compute_metric2(feature, label, action, seq_type, probe_seqs, gallery_seqs)
-        top_1_accuracy = np.mean(accuracy[:, :, :, 0])
-        print('Validation Epoch: %d, Top-1 Accuracy: %.4f' % (epoch, top_1_accuracy), flush=True)
-        print('Validation Epoch: %d, Action Accuracy: %.4f' % (epoch, act_acc), flush=True)
+        #accuracy = compute_metric2(feature, label, action, seq_type, probe_seqs, gallery_seqs)
+        #top_1_accuracy = np.mean(accuracy[:, :, :, 0])
+        #print('Validation Epoch: %d, Top-1 Accuracy: %.4f' % (epoch, top_1_accuracy), flush=True)
+        #print('Validation Epoch: %d, Action Accuracy: %.4f' % (epoch, act_acc), flush=True)
         #writer.add_scalar('Validation Top-1 Accuracy', top_1_accuracy, epoch)
-        metric = top_1_accuracy
-        return metric
+        return act_acc
         
     elif args.dataset == 'mergedntupk':
         probe_seqs = [
@@ -399,7 +408,7 @@ def train_model(cfg, run_id, save_dir, use_cuda, args, writer):
     steps_per_epoch = len(train_data_gen) / args.batch_size
     print("Steps per epoch: " + str(steps_per_epoch))
 
-    num_views = 3
+    num_views = 3   #CS: 34 CV: 48
     model = build_model(args.model_version, args.input_dim, args.num_frames, num_views, cfg.num_actions, args.patch_size, args.hidden_dim, args.num_heads, args.num_layers)
     
     #####################################################################################################################
