@@ -418,14 +418,11 @@ def frame_creation(row, dataset, videos_folder, height, width, num_frames, trans
             
         else:
             path = '/squash/PKUMMDs/PKUMMD/SKELETON_VIDEO/'
-            processed_action_skeletons = []
-            
+            processed_action_skeletons = []     
             frame_indexer = np.linspace(start_frame, end_frame-1, 16).astype(int)
-            full_video_skeletons = open(os.path.join(path, f'{video_id}.txt'), 'r').readlines()
-
             
             for i in sorted(frame_indexer):
-                action_skeletons = full_video_skeletons[i].split(' ')
+                action_skeletons = open(os.path.join(path, f'{video_id}.txt'), 'r').readlines()[i].split(' ')
                 frame_skeleton = [float(ele) for ele in action_skeletons]
                 frame_skeleton = torch.tensor(frame_skeleton)
                 
