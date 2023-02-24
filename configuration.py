@@ -4,30 +4,30 @@ def build_config(dataset):
     cfg = type('', (), {})()
     if dataset == 'ntu_rgbd_120':
         cfg.videos_folder =  '/home/c3-0/datasets/NTU_RGBD_120/nturgb+d_rgb'
-        cfg.train_annotations = '/home/siddiqui/Action_Biometrics/data/NTUTrain_CSmap.csv'
-        cfg.test_annotations = '/home/siddiqui/Action_Biometrics/data/NTUTest_CSmap.csv'
-        cfg.train_subjects = range(53) #CS: 53, CV: 80
-        cfg.test_subjects = range(53)  #CS: 53, CV: 69
+        cfg.train_annotations = '/home/siddiqui/Action_Biometrics/data/NTUTrain_CVmap.csv'
+        cfg.test_annotations = '/home/siddiqui/Action_Biometrics/data/NTUTest_CVmap.csv'
+        cfg.train_subjects = range(80) #CS: 53, CV: 80
+        cfg.test_subjects = range(69)  #CS: 53, CV: 69
         cfg.num_actions = 120
         cfg.num_subjects = 106
         
     elif dataset == 'ntu_rgbd_60':
         cfg.videos_folder =  '/home/c3-0/datasets/NTU_RGBD_120/nturgb+d_rgb'
-        cfg.train_annotations = '/home/siddiqui/Action_Biometrics/data/NTU60Train_CVmap.csv'
-        cfg.test_annotations = '/home/siddiqui/Action_Biometrics/data/NTU60Test_CVmap.csv'
-        cfg.train_subjects = range(40) #CS: 20, CV: 40
-        cfg.test_subjects = range(40)  #CS: 20, CV: 40
+        cfg.train_annotations = '/home/siddiqui/Action_Biometrics/data/NTU60Train_CSmap.csv'
+        cfg.test_annotations = '/home/siddiqui/Action_Biometrics/data/NTU60Test_CSmap.csv'
+        cfg.train_subjects = range(20) #CS: 20, CV: 40
+        cfg.test_subjects = range(20)  #CS: 20, CV: 40
         cfg.num_actions = 60
         cfg.num_subjects = 40
         
     elif dataset == "pkummd":
-        cfg.videos_folder =  '/home/c3-0/datasets/MergedPKUMMD/RGB_VIDEO'
-        cfg.train_annotations = '/home/siddiqui/Action_Biometrics/data/MPKUMMDTrain_map4edit.csv'
-        cfg.test_annotations = '/home/siddiqui/Action_Biometrics/data/MPKUMMDTest_map4edit.csv'
-        cfg.train_subjects = range(59)
-        cfg.test_subjects = range(59, 75)
-        cfg.num_subjects = 76
-        cfg.num_actions = 43
+        cfg.videos_folder =  '/home/c3-0/datasets/PKUMMD/RGB_VIDEO'
+        cfg.train_annotations = '/home/siddiqui/Multiview_Actions/PKUMMDTrainCS_map.csv'
+        cfg.test_annotations = '/home/siddiqui/Multiview_Actions/PKUMMDTestCS_map.csv'
+        cfg.train_subjects = range(56) #CS: 56 CV: 66
+        cfg.test_subjects = range(7)  #CS:  7 CV: 63
+        cfg.num_subjects = 66
+        cfg.num_actions = 51
 
         
     elif dataset == 'mergedntupk':
