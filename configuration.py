@@ -22,6 +22,7 @@ def build_config(dataset):
         
     elif dataset == "pkummd":
         cfg.videos_folder =  '/home/c3-0/datasets/PKUMMD/RGB_VIDEO'
+        cfg.skeleton_folder = '/home/c3-0/praveen/datasets/PKUMMD/data/skeleton_ntu'
         cfg.train_annotations = '/home/siddiqui/Multiview_Actions/PKUMMDTrainCS_map.csv'
         cfg.test_annotations = '/home/siddiqui/Multiview_Actions/PKUMMDTestCS_map.csv'
         cfg.train_subjects = range(56) #CS: 56 CV: 66

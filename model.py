@@ -10,6 +10,9 @@ import math
 import numpy as np
 from models.v1_backbone import VideoTransformer as V1
 from models.v3_backbone import VideoTransformer as V3
+from models.v1_skeleton import VideoTransformer as Skeleton
+from models.v1_skeleton2 import VideoTransformer as Skeleton2
+
 
 
 def cosine_pairwise_dist(x, y):
@@ -25,6 +28,10 @@ def build_model(version, input_size, num_frames, num_subjects, num_actions, patc
         model = V3(input_size, num_frames, num_subjects, num_actions, patch_size, hidden_dim, num_heads, num_layers)
     elif version == 'v1':
         model = V1(input_size, num_frames, num_subjects, num_actions, patch_size, hidden_dim, num_heads, num_layers)
+    elif version == 'skeleton':
+        model = Skeleton(input_size, num_frames, num_subjects, num_actions, patch_size, hidden_dim, num_heads, num_layers)
+    elif version == 'skeleton2':
+        model = Skeleton2(input_size, num_frames, num_subjects, num_actions, patch_size, hidden_dim, num_heads, num_layers)
     model.apply(weights_init)
     return model
 
@@ -35,14 +42,17 @@ def build_model(version, input_size, num_frames, num_subjects, num_actions, patc
 
 if __name__ == '__main__':
     layers = 2
-    model = build_model('v1', 224, 16, 3, 41, 16, 256, 8, layers)
+    model = build_model('skeleton2', 150, 16, 3, 41, 16, 256, 8, layers)
     model.cuda()
     
     total_params = sum(p.numel() for p in model.parameters()) 
     print(total_params)
 
     model.eval()
-    features = Variable(torch.rand(2, 16, 3, 224, 224)).cuda()
+    #features = Variable(torch.rand(2, 16, 150)).cuda()
+
+    N, C, T, V, M = 6, 3, 16, 25, 2
+    features = Variable(torch.randn(N, C, T, V, M)).cuda()
     
     output_subject, output_action, m_features, act_features, actq, subq = model(features)
     print(output_subject.shape, output_action.shape, m_features.shape, act_features.shape, flush=True)
