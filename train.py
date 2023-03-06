@@ -234,13 +234,13 @@ def val_epoch(cfg, epoch, data_loader, model, writer, use_cuda, args, action_fla
             output_subjects = torch.argmax(output_subjects, dim=1)
             output_actions = torch.argmax(output_actions, dim=1)
             acc = torch.sum(output_actions == action_targets)
-            total_acc = torch.sum(output_actions == action_targets) * args.batch_size
-            count += total_acc
+            #total_acc = torch.sum(output_actions == action_targets) * args.batch_size
+            #count += total_acc
             act_acc.append(acc)
             if i == 3:
                 print(output_actions, action_targets, flush=True)
                 print(output_subjects, labels, flush=True)
-                print(f'totalacc: {total_acc}', flush=True)
+                #print(f'totalacc: {total_acc}', flush=True)
                 act_pred = torch.stack([acc for acc in act_acc])
                 act_acc_pred = torch.sum(act_pred) / (len(act_pred) * args.batch_size)
                 print(act_acc_pred)
@@ -262,7 +262,7 @@ def val_epoch(cfg, epoch, data_loader, model, writer, use_cuda, args, action_fla
     act_acc = torch.sum(act) / (len(act) * args.batch_size)
     print('Validation Epoch: %d, Action Accuracy: %.4f' % (epoch, act_acc), flush=True)
     print('Validation Epoch: %d, View Accuracy: %.4f' % (epoch, sub_acc), flush=True)
-    print(f'total view accuracy: {count / (len(data_loader) * args.batch_size)}, {len(data_loader)}, {count}')
+    #print(f'total view accuracy: {count / (len(data_loader) * args.batch_size)}, {len(data_loader)}, {count}')
         
     #pickle.dump(results, open('R3D.pkl', 'wb'))
     #print('dumped', flush=True)
@@ -413,7 +413,7 @@ def train_model(cfg, run_id, save_dir, use_cuda, args, writer):
     steps_per_epoch = len(train_data_gen) / args.batch_size
     print("Steps per epoch: " + str(steps_per_epoch))
 
-    num_views = 2   #CV: 2 - CS: 34 CV: 48
+    num_views = 3   #CV: 2 - CS: 34 CV: 48
     model = build_model(args.model_version, args.input_dim, args.num_frames, num_views, cfg.num_actions, args.patch_size, args.hidden_dim, args.num_heads, args.num_layers)
     
     #####################################################################################################################
