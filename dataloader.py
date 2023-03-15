@@ -111,7 +111,7 @@ class omniDataLoader(Dataset):
                 video_id, subject, action, viewpoint = row.split(',')       
                     
             if self.dataset == 'ntu_rgbd_120' or self.dataset == 'ntu_rgbd_60':
-                if f'{video_id}.hdf5' in hdf5_list:
+                if f'{video_id[:-8]}.skeleton' in self.skeleton_files:
                     if df['subject'].value_counts()[int(subject)] < 2:
                         print(row, flush=True)
                         continue
@@ -249,7 +249,7 @@ class omniDataLoader(Dataset):
                 camera, rep, setup = row[3], row[4], row[5]
                 row = [subject, action, video_id, camera, rep, setup]
                 view = ';'.join([camera, setup])
-                frames = frame_creation(row, self.dataset, self.videos_folder, self.height, self.width, self.num_frames, self.transform)
+                frames = self.frame_creation(row, self.dataset, self.videos_folder, self.height, self.width, self.num_frames, self.transform)
                 action = self.actions.index(action)
                 #camera = self.views.index(view)
                 camera = int(camera) - 1   
@@ -377,26 +377,38 @@ class omniDataLoader(Dataset):
             
     def frame_creation(self, row, dataset, videos_folder, height, width, num_frames, transform, blurred_model=None, bcfg=None):    
         if dataset == "ntu_rgbd_120" or dataset == 'ntu_rgbd_60':
+            skeleton = True
             list16 = []
             subject, action, video_id, start_frame, end_frame = row[0], row[1], row[2], row[3], row[4]
-            frames = h5py.File(os.path.join('/home/siddiqui/Action_Biometrics/frame_data/ntu_rgbd_120', f'{video_id}.hdf5'), 'r')
-            frames = frames['default'][:]
-            frames = torch.from_numpy(frames).float()
-            
-            frame_indexer = np.linspace(0, int(frames.shape[0]) - 1 , num_frames).astype(int)
-            for i, frame in enumerate(frames):
-                if i in frame_indexer:
-                    list16.append(frame)
-            frames = torch.stack([frame for frame in list16])
-            
-            for i, frame in enumerate(frames):
-                frames[i] = frames[i] / 255.
+            if not skeleton:
+                frames = h5py.File(os.path.join('/home/siddiqui/Action_Biometrics/frame_data/ntu_rgbd_120', f'{video_id}.hdf5'), 'r')
+                frames = frames['default'][:]
+                frames = torch.from_numpy(frames).float()
                 
-            if transform:
-                frames = frames.transpose(0, 1)
-                frames = transform(frames)
-                frames = frames.transpose(0, 1)
-            return frames
+                frame_indexer = np.linspace(0, int(frames.shape[0]) - 1 , num_frames).astype(int)
+                for i, frame in enumerate(frames):
+                    if i in frame_indexer:
+                        list16.append(frame)
+                frames = torch.stack([frame for frame in list16])
+                
+                for i, frame in enumerate(frames):
+                    frames[i] = frames[i] / 255.
+                    
+                if transform:
+                    frames = frames.transpose(0, 1)
+                    frames = transform(frames)
+                    frames = frames.transpose(0, 1)
+                return frames
+                
+            else:
+                path = '/home/c3-0/datasets/NTU_RGBD_120/nturgb+d_skeletons'
+                skeleton_file = os.path.join(path, f'{video_id[:-8]}.skeleton')
+                skeletons = read_xyz(skeleton_file, 'ntu')
+                #print(skeletons.shape)
+                frame_indexer = np.linspace(0, skeletons.shape[1] - 1, 16).astype(int)
+                skeleton = skeletons[:, frame_indexer, :, :]
+                #print(skeleton.shape)
+                return skeleton
         
         elif dataset == "pkummd":
             skeleton = True
@@ -448,7 +460,7 @@ class omniDataLoader(Dataset):
                 sk_file = sk_files[0]
                 
                 skeleton_file = os.path.join(path, sk_file)
-                skeletons = read_xyz(skeleton_file)
+                skeletons = read_xyz(skeleton_file, 'pkummd')
                 
                 frame_indexer = np.linspace(0, skeletons.shape[1] - 1, 16).astype(int)
                 action_skeletons = skeletons[:, frame_indexer, :, :]
@@ -522,7 +534,7 @@ class omniDataLoader(Dataset):
         
 if __name__ == '__main__':
     shuffle = False
-    cfg = build_config('pkummd')
+    cfg = build_config('ntu_rgbd_60')
     transform_train = Compose(
                 [
                     Normalize([0.45, 0.45, 0.45], [0.225, 0.225, 0.225]),
@@ -554,11 +566,11 @@ if __name__ == '__main__':
     cv_skeleton_action_list = [73, 12, 76, 72, 74, 11, 103, 75, 71, 105]
 
     data_generator = omniDataLoader(cfg, 'rgb', 'train', 1.0, 16, skip=0, shuffle=shuffle, transform=None, flag=False, multi_action=False)
-    dataloader = DataLoader(data_generator, batch_size=1, num_workers=0, shuffle=False, drop_last=True, collate_fn=None)
+    dataloader = DataLoader(data_generator, batch_size=1, num_workers=0, shuffle=False, collate_fn=None)
     
     for (clips, views, actions, keys) in tqdm(dataloader):
         print(clips.shape, actions.shape, views.shape)
-        exit()
+        #exit()
     
    
     #for (clips, sv_clips, sa_clips, views, actions, keys) in tqdm(dataloader):

@@ -3,6 +3,7 @@ import json
 def build_config(dataset):
     cfg = type('', (), {})()
     if dataset == 'ntu_rgbd_120':
+        cfg.skeleton_folder = '/home/c3-0/datasets/NTU_RGBD_120/nturgb+d_skeletons'
         cfg.videos_folder =  '/home/c3-0/datasets/NTU_RGBD_120/nturgb+d_rgb'
         cfg.train_annotations = '/home/siddiqui/Action_Biometrics/data/NTUTrain_CVmap.csv'
         cfg.test_annotations = '/home/siddiqui/Action_Biometrics/data/NTUTest_CVmap.csv'
@@ -12,11 +13,12 @@ def build_config(dataset):
         cfg.num_subjects = 106
         
     elif dataset == 'ntu_rgbd_60':
+        cfg.skeleton_folder = '/home/c3-0/datasets/NTU_RGBD_120/nturgb+d_skeletons'
         cfg.videos_folder =  '/home/c3-0/datasets/NTU_RGBD_120/nturgb+d_rgb'
-        cfg.train_annotations = '/home/siddiqui/Action_Biometrics/data/NTU60Train_CSmap.csv'
-        cfg.test_annotations = '/home/siddiqui/Action_Biometrics/data/NTU60Test_CSmap.csv'
-        cfg.train_subjects = range(20) #CS: 20, CV: 40
-        cfg.test_subjects = range(20)  #CS: 20, CV: 40
+        cfg.train_annotations = '/home/siddiqui/Action_Biometrics/data/NTU60Train_CVmap.csv'
+        cfg.test_annotations = '/home/siddiqui/Action_Biometrics/data/NTU60Test_CVmap.csv'
+        cfg.train_subjects = range(40) #CS: 20, CV: 40
+        cfg.test_subjects = range(40)  #CS: 20, CV: 40
         cfg.num_actions = 60
         cfg.num_subjects = 40
         
