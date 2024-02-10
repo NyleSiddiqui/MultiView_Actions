@@ -14,8 +14,7 @@
 
 ### Usage Instructions
 1. Navigate to desired directory
-2. Modify parameters python file if necessary
-3. Run the main python file
+2. Run the main python file
 
 Example:
 ```bash
