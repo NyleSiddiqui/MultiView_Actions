@@ -8,7 +8,6 @@ from torch import nn
 from torch.nn import functional as F
 import math
 import numpy as np
-from models.v1_backbone import VideoTransformer as V1
 from models.v3_backbone import VideoTransformer as V3
 
 
@@ -20,11 +19,9 @@ def weights_init(m):
     if isinstance(m, nn.Linear):
         kaiming_uniform_(m.weight.data)
 
-def build_model(version, input_size, num_frames, num_subjects, num_actions, patch_size, hidden_dim, num_heads, num_layers):
+def build_model(version, input_size, num_views, num_actions):
     if version == 'v3':
-        model = V3(input_size, num_frames, num_subjects, num_actions, patch_size, hidden_dim, num_heads, num_layers)
-    elif version == 'v1':
-        model = V1(input_size, num_frames, num_subjects, num_actions, patch_size, hidden_dim, num_heads, num_layers)
+        model = V3(input_size, num_views, num_actions)
     model.apply(weights_init)
     return model
 
@@ -46,7 +43,6 @@ if __name__ == '__main__':
     
     output_subject, output_action, m_features, act_features, actq, subq = model(features)
     print(output_subject.shape, output_action.shape, m_features.shape, act_features.shape, flush=True)
-    exit()
     
 
 
