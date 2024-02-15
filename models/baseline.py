@@ -43,26 +43,15 @@ class I3DBackbone(nn.Module):
 
         
 class R3DBackbone(nn.Module):
-    def __init__(self, pretrained, hidden_dim=512):
+    def __init__(self):
         super(R3DBackbone, self).__init__()
         weights = R3D_18_Weights.DEFAULT
         model = r3d_18(weights=weights).cuda()
-        self.hidden_dim = hidden_dim
+        self.hidden_dim = 256
         self.R3D_model = model
         self.extractor = create_feature_extractor(model, return_nodes={"layer4": "features"}) #extract from earlier layer?
         self.avg_pool = nn.AvgPool3d(kernel_size=[1, 14, 14], stride=(1, 1, 1)) # reduce spatial downsize to 7x7
-        self.feature_reduce = nn.Conv3d(512, 64, [1, 1, 1])
         self.name = 'r3d'
-        
-        if pretrained:
-            model_kvpair = self.extractor.state_dict()
-            for layer_name, weights in torch.load('./trained_models/R3D.pth')['state_dict'].items():
-                layer_name = layer_name.replace('R3D_model.','')
-                layer_name = layer_name.replace('extractor.','')
-                if 'logits' in layer_name or 'actions' in layer_name or 'feature_dim' in layer_name or 'features' in layer_name or 'fc' in layer_name:
-                    continue
-                model_kvpair[layer_name]=weights
-            self.extractor.load_state_dict(model_kvpair, strict=True)
 
        
     def forward(self, inputs):
