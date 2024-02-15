@@ -32,7 +32,7 @@ def build_model(version, input_size, num_views, num_actions):
 
 if __name__ == '__main__':
     layers = 2
-    model = build_model('v1', 224, 16, 3, 41, 16, 256, 8, layers)
+    model = build_model('v1', 224, 3, 41)
     model.cuda()
     
     total_params = sum(p.numel() for p in model.parameters()) 
