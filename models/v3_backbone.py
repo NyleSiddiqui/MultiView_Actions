@@ -3,54 +3,57 @@ from torch import nn
 from models.baseline import R3DBackbone
 from einops import repeat
 
+
 class VideoTransformer(nn.Module):
     def __init__(self, input_size, num_views, num_actions):
         super(VideoTransformer, self).__init__()
         self.input_size = input_size
         self.num_views = num_views
         self.num_actions = num_actions
-        self.backbone = R3DBackbone(pretrained=True)
+        self.backbone = R3DBackbone()
 
         if self.backbone.name == 'r3d':
-            self.patch_size = num_frames // 8
+            self.patch_size =  (16 // 8) 
             self.backbone_output = 512
 
-        self.positional_encoding = nn.Parameter(torch.zeros(self.patch_size, self.backbone_output), requires_grad=True) #torch zeroes?
-                
-        self.subject_decoder_l = nn.TransformerDecoderLayer(self.backbone_output, num_heads, dim_feedforward=hidden_dim, activation='gelu', batch_first=True, dropout=0.0, norm_first=False)
-        self.action_decoder_l = nn.TransformerDecoderLayer(self.backbone_output, num_heads, dim_feedforward=hidden_dim, activation='gelu', batch_first=True, dropout=0.0, norm_first=False)
-        self.subject_decoder = nn.TransformerDecoder(self.subject_decoder_l, self.num_layers)
-        self.action_decoder = nn.TransformerDecoder(self.action_decoder_l, self.num_layers)
+            
+        self.positional_encoding = nn.Parameter(torch.zeros(16, self.backbone_output), requires_grad=True) 
+                            
+        self.transformer_decoder_layer = nn.TransformerDecoderLayer(self.backbone_output, 8, dim_feedforward=256, activation='gelu', batch_first=True, dropout=0.0, norm_first=False)
+        self.tranformer_decoder = nn.TransformerDecoder(self.transformer_decoder_layer, 2)
         
-        self.action_tokens =  nn.Parameter(torch.unsqueeze(get_orthogonal_queries(20, self.backbone_output), dim=0))
-        self.subject_tokens = nn.Parameter(torch.unsqueeze(get_orthogonal_queries(20, self.backbone_output), dim=0))
+        num_queries = 30
+        #print(f'num queries: {num_queries}', flush=True)
+        self.action_tokens =  nn.Parameter(torch.unsqueeze(get_orthogonal_queries(num_queries, self.backbone_output), dim=0))
+        num_viewqueries = 1
+        self.view_tokens = nn.Parameter(torch.randn(1, num_viewqueries, self.backbone_output))
         
-        self.mlp_head_subject = nn.Linear(self.backbone_output, self.num_views)
+        self.mlp_head_view = nn.Linear(self.backbone_output, self.num_views)
         self.mlp_head_action = nn.Linear(self.backbone_output, num_actions)
         
-        
+
     def forward(self, inputs):
         bs = inputs.shape[0]
+    
         features = self.backbone(inputs)
         features = features.squeeze(-1).squeeze(-1)
         features = features.permute(0, 2, 1)
         features += self.positional_encoding[None, :features.shape[1], :]
-
         
         action_tokens = repeat(self.action_tokens, '() n d -> b n d', b=bs)
-        subject_tokens = repeat(self.subject_tokens, '() n d -> b n d', b=bs)
-
-            
-        features_subject = self.subject_decoder(subject_tokens, features)
-        features_action = self.action_decoder(action_tokens, features)
+        view_tokens = repeat(self.view_tokens, '() n d -> b n d', b=bs)
         
-        features_subject = features_subject.mean(dim=1)
-        features_action = features_action.mean(dim=1)
+        queries = torch.cat((action_tokens, view_tokens), dim=1) # b x 16 x f
+        out = self.tranformer_decoder(queries, features)
+        x_act, x_view = out[:, :-1, :], out[:, -1, :]
         
-        output_subjects = self.mlp_head_subject(features_subject)
+        features_view = x_view
+        features_action = x_act.mean(dim=1)
+        
+        output_views = self.mlp_head_view(features_view)
         output_actions = self.mlp_head_action(features_action)
-        
-        return output_subjects, output_actions, features_subject, features_action, subject_tokens, action_tokens
+                
+        return output_views, output_actions, features_view, features_action, view_tokens, action_tokens
         
         
 def generate_orthogonal_vectors(N,d):
