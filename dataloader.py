@@ -75,7 +75,6 @@ class omniDataLoader(Dataset):
         self.dataset = cfg.dataset
         self.flag = flag
         self.data_split = data_split
-        self.num_frames = num_frames
         self.videos_folder = cfg.videos_folder
         if data_split == "train":
            self.annotations = cfg.train_annotations
