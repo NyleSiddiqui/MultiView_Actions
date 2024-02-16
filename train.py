@@ -92,18 +92,11 @@ def train_epoch(epoch, data_loader, model, optimizer, ema_optimizer, criterion, 
         for i, (clips, sv_clips, sa_clips, targets, actions, _) in enumerate(tqdm(data_loader)):
             assert len(clips) == len(targets)
     
-            if use_cuda:
-                clips = Variable(clips.type(torch.FloatTensor)).cuda()
-                sv_clips = Variable(sv_clips.type(torch.FloatTensor)).cuda()
-                sa_clips = Variable(sa_clips.type(torch.FloatTensor)).cuda()
-                targets = Variable(targets.type(torch.LongTensor)).cuda()
-                actions = Variable(actions.type(torch.LongTensor)).cuda()
-            else:
-                clips = Variable(clips.type(torch.FloatTensor))
-                sv_clips = Variable(sv_clips.type(torch.FloatTensor))
-                sa_clips = Variable(sa_clips.type(torch.FloatTensor))
-                targets = Variable(targets.type(torch.LongTensor))
-                actions = Variable(actions.type(torch.LongTensor))
+            clips = Variable(clips.type(torch.FloatTensor)).cuda()
+            sv_clips = Variable(sv_clips.type(torch.FloatTensor)).cuda()
+            sa_clips = Variable(sa_clips.type(torch.FloatTensor)).cuda()
+            targets = Variable(targets.type(torch.LongTensor)).cuda()
+            actions = Variable(actions.type(torch.LongTensor)).cuda()
     
             optimizer.zero_grad()
             
