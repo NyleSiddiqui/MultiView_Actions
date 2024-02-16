@@ -10,17 +10,20 @@ class VideoTransformer(nn.Module):
         self.input_size = input_size
         self.num_views = num_views
         self.num_actions = num_actions
+        num_frames = 16
+        num_heads = 8
+        num_layers = 2
         self.backbone = R3DBackbone()
 
         if self.backbone.name == 'r3d':
-            self.patch_size =  (16 // 8) 
+            self.patch_size =  (num_frames // 8) 
             self.backbone_output = 512
 
             
-        self.positional_encoding = nn.Parameter(torch.zeros(16, self.backbone_output), requires_grad=True) 
+        self.positional_encoding = nn.Parameter(torch.zeros(num_frames, self.backbone_output), requires_grad=True) 
                             
-        self.transformer_decoder_layer = nn.TransformerDecoderLayer(self.backbone_output, 8, dim_feedforward=256, activation='gelu', batch_first=True, dropout=0.0, norm_first=False)
-        self.tranformer_decoder = nn.TransformerDecoder(self.transformer_decoder_layer, 2)
+        self.transformer_decoder_layer = nn.TransformerDecoderLayer(self.backbone_output, num_heads, dim_feedforward=256, activation='gelu', batch_first=True, dropout=0.0, norm_first=False)
+        self.tranformer_decoder = nn.TransformerDecoder(self.transformer_decoder_layer, num_layers)
         
         num_queries = 30
         #print(f'num queries: {num_queries}', flush=True)
