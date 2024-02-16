@@ -4,7 +4,6 @@ from unittest.mock import CallableMixin
 import warnings
 import random
 warnings.filterwarnings("ignore")
-os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 import numpy as np
 from tqdm import tqdm
 
@@ -19,7 +18,6 @@ from torch.optim.lr_scheduler import *
 from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 from torchvision.utils import make_grid
-from torchvision.models.feature_extraction import create_feature_extractor, get_graph_node_names
 from pytorchvideo.transforms import (
     Normalize,
     RandomShortSideScale,
