@@ -75,7 +75,7 @@ def cuda_dist(x, y):
     return dist
 
 
-def train_epoch(epoch, data_loader, model, optimizer, ema_optimizer, criterion, writer, use_cuda, flag, args, accumulation_steps=1, action_flag=False):
+def train_epoch(epoch, data_loader, model, optimizer, ema_optimizer, criterion, writer, use_cuda, flag, args, action_flag=False):
     print('train at epoch {}'.format(epoch), flush=True)
     count = 0
     losses = []
@@ -85,16 +85,12 @@ def train_epoch(epoch, data_loader, model, optimizer, ema_optimizer, criterion, 
     sa_contrastive_losses = []
     ortho_sub_losses = []
     ortho_act_losses = []
-    intermediate_sub_losses = []
-    intermediate_act_losses = []
     act_acc = []
     sub_acc = []
-    fscores = []  
 
     model.train()
 
     if flag:
-        threshold = 0.1
         for i, (clips, sv_clips, sa_clips, targets, actions, _) in enumerate(tqdm(data_loader)):
             assert len(clips) == len(targets)
     
@@ -143,24 +139,14 @@ def train_epoch(epoch, data_loader, model, optimizer, ema_optimizer, criterion, 
             acc = torch.sum(output_actions == actions)
             act_acc.append(acc)
            
-            #loss = sub_loss + act_loss + sv_contrastive_loss + sa_contrastive_loss + subqloss + actqloss
+            loss = sub_loss + act_loss + sv_contrastive_loss + sa_contrastive_loss + subqloss + actqloss
             
-            #loss = act_loss + sa_contrastive_loss + actqloss # no view
-            #loss = sub_loss + act_loss + subqloss + actqloss # no contrast
-            #loss = sub_loss + act_loss + sv_contrastive_loss + sa_contrastive_loss # no ortho
-            #loss = sv_contrastive_loss + sa_contrastive_loss + subqloss + actqloss # no CE 
-            
-            loss = sub_loss + act_loss + sv_contrastive_loss + subqloss + actqloss # no action contrast
-            #loss = sub_loss + act_loss + sa_contrastive_loss + subqloss + actqloss # no view contrast
-            
-            
-
             if 3 < i < 5:
                 act = torch.stack([acc for acc in act_acc])
                 act_acc_pred = torch.sum(act) / (len(act) * args.batch_size)
                 sub = torch.stack([acc for acc in sub_acc])
                 sub_acc_pred = torch.sum(sub) / (len(sub) * args.batch_size)
-                print(act_acc_pred, sub_acc_pred)
+                # print(act_acc_pred, sub_acc_pred)
                 print(f'pred sub: {output_subjects}, GT: {targets}, pred act: {output_actions}, GT: {actions}, features: {features.shape}', flush=True)
                     
             
@@ -208,13 +194,11 @@ def train_epoch(epoch, data_loader, model, optimizer, ema_optimizer, criterion, 
 
 def val_epoch(cfg, epoch, data_loader, model, writer, use_cuda, args, action_flag=False):
     print('validation at epoch {}'.format(epoch))
-    threshold = 0.25
     model.eval()
 
     results = {}
     act_acc = []
     sub_acc = []
-    fscores = []
     for i, (clips, labels, action_targets, keys) in enumerate(tqdm(data_loader)):
         clips = Variable(clips.type(torch.FloatTensor))
         labels =  Variable(labels.type(torch.FloatTensor))
@@ -235,22 +219,17 @@ def val_epoch(cfg, epoch, data_loader, model, writer, use_cuda, args, action_fla
             acc = torch.sum(output_actions == action_targets)
             act_acc.append(acc)
             if i == 3:
-                print(output_actions, action_targets, flush=True)
-                print(output_subjects, labels, flush=True)
+                # print(output_actions, action_targets, flush=True)
+                # print(output_subjects, labels, flush=True)
                 act_pred = torch.stack([acc for acc in act_acc])
                 act_acc_pred = torch.sum(act_pred) / (len(act_pred) * args.batch_size)
-                print(act_acc_pred)
+                # print(act_acc_pred)
                 sub_pred = torch.stack([acc for acc in sub_acc])                
                 sub_acc_pred = torch.sum(sub_pred) / (len(sub_pred) * args.batch_size)
-                print(sub_acc_pred)
+                # print(sub_acc_pred)
             
             acc = torch.sum(output_subjects == labels)
             sub_acc.append(acc)
-
-            for i, feature in enumerate(features):
-                if keys[i] not in results:
-                    results[keys[i]] = []
-                results[keys[i]].append(feature.cpu().data.numpy())
     
     sub = torch.stack([acc for acc in sub_acc])                
     sub_acc = torch.sum(sub) / (len(sub) * args.batch_size)
@@ -258,102 +237,7 @@ def val_epoch(cfg, epoch, data_loader, model, writer, use_cuda, args, action_fla
     act_acc = torch.sum(act) / (len(act) * args.batch_size)
     print('Validation Epoch: %d, Action Accuracy: %.4f' % (epoch, act_acc), flush=True)
     print('Validation Epoch: %d, View Accuracy: %.4f' % (epoch, sub_acc), flush=True)
-        
-    #pickle.dump(results, open('R3D.pkl', 'wb'))
-    #print('dumped', flush=True)
-        
-        
-    if args.dataset == 'ntu_rgbd_120' or args.dataset == 'ntu_rgbd_60':
-#        probe_seqs = [
-#                        ['R002_C001_S026', 'R002_C001_S027', 'R002_C001_S028', 'R002_C001_S029', 'R002_C001_S030', 'R002_C001_S031', 'R002_C001_S032'], 
-#                        ['R002_C002_S026', 'R002_C002_S027', 'R002_C002_S028', 'R002_C002_S029', 'R002_C002_S030', 'R002_C002_S031', 'R002_C002_S032'], 
-#                        ['R002_C003_S026', 'R002_C003_S027', 'R002_C003_S028', 'R002_C003_S029', 'R002_C003_S030', 'R002_C003_S031', 'R002_C003_S032']
-#                     ]
-#        gallery_seqs = [
-#                        ['R001_C001_S026', 'R001_C001_S027', 'R001_C001_S028', 'R001_C001_S029', 'R001_C001_S030', 'R001_C001_S031', 'R001_C001_S032', 
-#                         'R001_C002_S026', 'R001_C002_S027', 'R001_C002_S028', 'R001_C002_S029', 'R001_C002_S030', 'R001_C002_S031', 'R001_C002_S032', 
-#                         'R001_C003_S026', 'R001_C003_S027', 'R001_C003_S028', 'R001_C003_S029', 'R001_C003_S030', 'R001_C003_S031', 'R001_C003_S032'
-#                        ]
-#                       ]
-#        feature, seq_type, action, label = [], [], [], []
-#        for key in results.keys():
-#            _label, s_num, _cam_id, rep_num, _action = key.split('_')
-#            label.append(_label)
-#            seq_type.append('_'.join([rep_num, _cam_id, s_num]))
-#            action.append(_action)
-#            _feature = results[key]
-#            feature.append(_feature)
-#        feature = np.array(feature).squeeze()
-#        label = np.array(label)
-        
-        #accuracy = compute_metric2(feature, label, action, seq_type, probe_seqs, gallery_seqs)
-        #top_1_accuracy = np.mean(accuracy[:, :, :, 0])
-        #print('Validation Epoch: %d, Top-1 Accuracy: %.4f' % (epoch, top_1_accuracy), flush=True)
-        #writer.add_scalar('Validation Top-1 Accuracy', top_1_accuracy, epoch)
-        #metric = top_1_accuracy
-        return act_acc
-        
-    elif args.dataset == 'pkummd':
-        #print(output_subjects.shape, output_actions.shape, features.shape, act_features.shape)
-        probe_seqs = [['L', 'R']]
-        gallery_seqs = [['M']]
-        feature, seq_type, action, label = [], [], [], []
-        for key in results.keys():
-            subject, video_id, action_id, start_frame, end_frame, pov = key.split('_')
-            label.append(subject)
-            seq_type.append('_'.join([pov]))
-            action.append(action_id)
-            _feature = results[key]
-            feature.append(_feature)
-        feature = np.array(feature).squeeze()
-        label = np.array(label)
-        #accuracy = compute_metric2(feature, label, action, seq_type, probe_seqs, gallery_seqs)
-        #top_1_accuracy = np.mean(accuracy[:, :, :, 0])
-        #print('Validation Epoch: %d, Top-1 Accuracy: %.4f' % (epoch, top_1_accuracy), flush=True)
-        #print('Validation Epoch: %d, Action Accuracy: %.4f' % (epoch, act_acc), flush=True)
-        #writer.add_scalar('Validation Top-1 Accuracy', top_1_accuracy, epoch)
-        return act_acc
-        
-    elif args.dataset == 'mergedntupk':
-        probe_seqs = [
-                        ['L', 'R'], 
-                        ['R002_C001_S006', 'R002_C001_S007', 'R002_C001_S008', 'R002_C001_S009', 'R002_C001_S010', 'R002_C001_S011', 'R002_C001_S012', 'R002_C001_S013', 'R002_C001_S014', 'R002_C001_S015', 'R002_C001_S016'], 
-                        ['R002_C002_S006', 'R002_C002_S007', 'R002_C002_S008', 'R002_C002_S009', 'R002_C002_S010', 'R002_C002_S011', 'R002_C002_S012', 'R002_C002_S013', 'R002_C002_S014', 'R002_C002_S015', 'R002_C002_S016'], 
-                        ['R002_C003_S006', 'R002_C003_S007', 'R002_C003_S008', 'R002_C003_S009', 'R002_C003_S010', 'R002_C003_S011', 'R002_C003_S012', 'R002_C003_S013', 'R002_C003_S014', 'R002_C003_S015', 'R002_C003_S016']
-                     ]
-                     
-        gallery_seqs = [
-                         ['M'],
-                         ['R001_C001_S006', 'R001_C001_S007', 'R001_C001_S008', 'R001_C001_S009', 'R001_C001_S010', 'R001_C001_S011', 'R001_C001_S012', 'R001_C001_S013', 'R001_C001_S014', 'R001_C001_S015', 'R001_C001_S016', 
-                          'R001_C002_S006', 'R001_C002_S007', 'R001_C002_S008', 'R001_C002_S009', 'R001_C002_S010', 'R001_C002_S011', 'R001_C002_S012', 'R001_C002_S013', 'R001_C002_S014', 'R001_C002_S015', 'R001_C002_S016',  
-                          'R001_C003_S006', 'R001_C003_S007', 'R001_C003_S008', 'R001_C003_S009', 'R001_C003_S010', 'R001_C003_S011', 'R001_C003_S012', 'R001_C003_S013', 'R001_C003_S014', 'R001_C003_S015', 'R001_C003_S016'
-                         ]
-                       ]
-        feature, seq_type, action, label = [], [], [], []
-        for key in results.keys():
-            if key[0] == 'P':
-                subject, s_num, _cam_id, rep_num, action_id = key.split('_')
-                seq_type.append('_'.join([rep_num, _cam_id, s_num]))
-            else:
-                subject, video_id, action_id, p1, p2, p3 = key.split('_')
-                seq_type.append('_'.join([p3]))
-            label.append(subject)
-            action.append(action_id)
-            _feature = results[key]
-            feature.append(_feature)
-        feature = np.array(feature).squeeze()
-        label = np.array(label)
-        accuracy = compute_metric2(feature, label, action, seq_type, probe_seqs, gallery_seqs)
-        top_1_accuracy = np.mean(accuracy[:, :, :, 0])
-        print('Validation Epoch: %d, Top-1 Accuracy: %.4f' % (epoch, top_1_accuracy), flush=True)
-        print('Validation Epoch: %d, Action Accuracy: %.4f' % (epoch, act_acc), flush=True)
-        #writer.add_scalar('Validation Top-1 Accuracy', top_1_accuracy, epoch)
-        metric = top_1_accuracy
-        return metric
-        
-    else:
-        print('add probe?')
-        return act_acc
+    return act_acc
         
     
 
@@ -364,11 +248,6 @@ def train_model(cfg, run_id, save_dir, use_cuda, args, writer):
     print("Parameters used : ")
     print("batch_size: " + str(args.batch_size))
     print("lr: " + str(args.learning_rate))
-    
-    if args.random_skip:
-        skip = random.choice([x for x in range(0, 4)])
-    else:
-        skip = args.skip
 
     transform_train = Compose(
         [
@@ -392,15 +271,12 @@ def train_model(cfg, run_id, save_dir, use_cuda, args, writer):
         ]
     )
     
-    flag = True if args.model_version in ['v1', 'v2', 'v3', 'v3+backbone', 'v4', 'v3_intermediate'] else True if args.contrastive_train else False
-    action_flag = args.action_train 
-    print(action_flag, flag, flush=True)
-    
-    train_data_gen = omniDataLoader(cfg, args.input_type, 'train', 1.0, args.num_frames, skip=skip, transform=transform_train, flag=flag) #V3 Charades
-    val_data_gen = omniDataLoader(cfg, args.input_type, 'test', 1.0, args.num_frames, skip=skip, transform=transform_test, flag=False)
+    flag = True if args.model_version == 'v3'] else False    
+    train_data_gen = omniDataLoader(cfg, 'train', transform=transform_train, flag=flag)
+    val_data_gen = omniDataLoader(cfg, 'test', 1.0, args.num_frames, skip=skip, transform=transform_test, flag=False)
     
     train_dataloader = DataLoader(train_data_gen, batch_size=args.batch_size, shuffle=shuffle, num_workers=args.num_workers, drop_last=True, collate_fn=default_collate)
-    val_dataloader = DataLoader(val_data_gen, batch_size=args.batch_size, shuffle=shuffle, num_workers=args.num_workers, drop_last=True, collate_fn=val_collate)
+    val_dataloader = DataLoader(val_data_gen, batch_size=args.batch_size, shuffle=shuffle, num_workers=args.num_workers, drop_last=False, collate_fn=val_collate)
     
     print("Number of training samples : " + str(len(train_data_gen)))
     print("Number of testing samples : " + str(len(val_data_gen)))
@@ -408,16 +284,14 @@ def train_model(cfg, run_id, save_dir, use_cuda, args, writer):
     steps_per_epoch = len(train_data_gen) / args.batch_size
     print("Steps per epoch: " + str(steps_per_epoch))
 
-    num_views = 3   #CS: 34 CV: 48
-    model = build_model(args.model_version, args.input_dim, args.num_frames, num_views, cfg.num_actions, args.patch_size, args.hidden_dim, args.num_heads, args.num_layers)
+    num_views = 3 
+    model = build_model(args.model_version, num_views, cfg.num_actions)
     
     #####################################################################################################################
     num_gpus = len(args.gpu.split(','))
     if num_gpus > 1:
         model = torch.nn.DataParallel(model)
-    
-    if use_cuda:
-       model.cuda()
+    model.cuda()
     #####################################################################################################################
     
     if args.checkpoint:
@@ -443,7 +317,7 @@ def train_model(cfg, run_id, save_dir, use_cuda, args, writer):
     max_fmap_score, fmap_score = -1, -1
     # loop for each epoch
     for epoch in range(args.num_epochs):
-        model = train_epoch(epoch, train_dataloader, model, optimizer, ema_optimizer, criterion, writer, use_cuda, flag, args, accumulation_steps=args.steps, action_flag=False)
+        model = train_epoch(epoch, train_dataloader, model, optimizer, ema_optimizer, criterion, writer, use_cuda, flag, args, action_flag=False)
         if epoch % args.validation_interval == 0:
             score1 = val_epoch(cfg, epoch, val_dataloader, model, None, use_cuda, args)
             fmap_score = score1
