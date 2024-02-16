@@ -262,7 +262,7 @@ def train_model(cfg, run_id, save_dir, use_cuda, args, writer):
         ]
     )
     
-    flag = True if args.model_version == 'v3'] else False    
+    flag = True if args.model_version == 'v3' else False    
     train_data_gen = omniDataLoader(cfg, 'train', transform=transform_train, flag=flag)
     val_data_gen = omniDataLoader(cfg, 'test', 1.0, args.num_frames, skip=skip, transform=transform_test, flag=False)
     
