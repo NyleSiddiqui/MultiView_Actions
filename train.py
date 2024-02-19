@@ -73,7 +73,7 @@ def cuda_dist(x, y):
     return dist
 
 
-def train_epoch(epoch, data_loader, model, optimizer, ema_optimizer, criterion, writer, use_cuda, flag, args, action_flag=False):
+def train_epoch(epoch, data_loader, model, optimizer, ema_optimizer, criterion, writer, use_cuda, flag, args):
     print('train at epoch {}'.format(epoch), flush=True)
     count = 0
     losses = []
@@ -150,13 +150,10 @@ def train_epoch(epoch, data_loader, model, optimizer, ema_optimizer, criterion, 
             
            
             losses.append(loss.item())
-            loss = loss / accumulation_steps
             loss.backward()             
-            
-            if (i+1) % accumulation_steps == 0:
-                optimizer.step()
-                optimizer.zero_grad()
-                ema_optimizer.step()
+            optimizer.step()
+            optimizer.zero_grad()
+            ema_optimizer.step()
                 
             losses.append(loss.item())
     
@@ -247,7 +244,7 @@ def train_model(cfg, run_id, save_dir, use_cuda, args, writer):
                 min_size=224,
                 max_size=256,
             ),
-            RandomCrop(args.input_dim),
+            RandomCrop(224),
             RandomHorizontalFlip(p=0.5)
             
         ]
@@ -258,13 +255,13 @@ def train_model(cfg, run_id, save_dir, use_cuda, args, writer):
             ShortSideScale(
                 size=256
             ),
-            CenterCrop(args.input_dim)
+            CenterCrop(224)
         ]
     )
     
     flag = True if args.model_version == 'v3' else False    
     train_data_gen = omniDataLoader(cfg, 'train', transform=transform_train, flag=flag)
-    val_data_gen = omniDataLoader(cfg, 'test', 1.0, args.num_frames, skip=skip, transform=transform_test, flag=False)
+    val_data_gen = omniDataLoader(cfg, 'test', 1.0, 16, transform=transform_test, flag=False)
     
     train_dataloader = DataLoader(train_data_gen, batch_size=args.batch_size, shuffle=shuffle, num_workers=args.num_workers, drop_last=True, collate_fn=default_collate)
     val_dataloader = DataLoader(val_data_gen, batch_size=args.batch_size, shuffle=shuffle, num_workers=args.num_workers, drop_last=False, collate_fn=val_collate)
@@ -274,8 +271,8 @@ def train_model(cfg, run_id, save_dir, use_cuda, args, writer):
     
     steps_per_epoch = len(train_data_gen) / args.batch_size
     print("Steps per epoch: " + str(steps_per_epoch))
-
-    num_views = 3 
+    
+    num_views=3
     model = build_model(args.model_version, num_views, cfg.num_actions)
     
     #####################################################################################################################
@@ -308,7 +305,7 @@ def train_model(cfg, run_id, save_dir, use_cuda, args, writer):
     max_fmap_score, fmap_score = -1, -1
     # loop for each epoch
     for epoch in range(args.num_epochs):
-        model = train_epoch(epoch, train_dataloader, model, optimizer, ema_optimizer, criterion, writer, use_cuda, flag, args, action_flag=False)
+        model = train_epoch(epoch, train_dataloader, model, optimizer, ema_optimizer, criterion, writer, use_cuda, flag, args)
         if epoch % args.validation_interval == 0:
             score1 = val_epoch(cfg, epoch, val_dataloader, model, None, use_cuda, args)
             fmap_score = score1

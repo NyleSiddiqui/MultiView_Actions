@@ -21,7 +21,6 @@ def train_classifier(run_id, use_cuda, args):
 
 
 def main(args):
-    print("Run description : ", args.run_description)
 
     # call a function depending on the 'mode' parameter
     if args.train_classifier:
@@ -68,9 +67,9 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str, required=True, help='Dataset to use.', choices=["ntu_rgbd_120", 'ntu_rgbd_60', "pkummd",  'mergedntupk', 'numa'])
 
     parser.add_argument('--model_version', type=str, required=True, help='Specify the model to use', 
-                        choices=['v3',])
+                        choices=['v3'])
     
-    group = parser.add_mutually_exclusive_group(required=True)
+    #group = parser.add_mutually_exclusive_group(required=True)
 
     parser.add_argument('--batch_size', type=int, default=32, help='Batch size.')
 

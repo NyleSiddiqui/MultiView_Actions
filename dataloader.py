@@ -71,7 +71,7 @@ def val_collate(batch):
         
         
 class omniDataLoader(Dataset):
-    def __init__(self, cfg, data_split, data_percentage, height=270, width=480, shuffle=True, transform=None, flag=False):
+    def __init__(self, cfg, data_split, height=270, width=480, shuffle=True, transform=None, flag=False):
         self.dataset = cfg.dataset
         self.flag = flag
         self.data_split = data_split
@@ -86,9 +86,9 @@ class omniDataLoader(Dataset):
         self.actions = []
         self.views = []
         if self.dataset != 'ntu_rgbd_60':
-            hdf5_list = os.listdir(f'/home/siddiqui/Action_Biometrics/frame_data/{self.dataset}/')
+            hdf5_list = os.listdir(f'/home/siddiqui/Action_Biometrics-RGB/frame_data/{self.dataset}/')
         else:
-            hdf5_list = os.listdir(f'/home/siddiqui/Action_Biometrics/frame_data/ntu_rgbd_120/')
+            hdf5_list = os.listdir(f'/home/siddiqui/Action_Biometrics-RGB/frame_data/ntu_rgbd_120/')
         for count, row in enumerate(open(self.annotations, 'r').readlines()[1:]):
             if self.dataset != "numa":
                 video_id, subject, action, placeholder1, placeholder2, placeholder3 = row.split(',')
@@ -147,6 +147,7 @@ class omniDataLoader(Dataset):
         self.height = height
         self.width = width
         self.transform = transform
+        self.num_frames = 16
 
     def __len__(self):
         return len(self.videos)
@@ -258,7 +259,7 @@ class omniDataLoader(Dataset):
             
                 
             
-def frame_creation(row, dataset, videos_folder, height, width, num_frames, transform, blurred_model=None, bcfg=None):    
+def frame_creation(row, dataset, videos_folder, height, width, num_frames, transform):    
     if dataset == "ntu_rgbd_120" or dataset == 'ntu_rgbd_60':
         list16 = []
         subject, action, video_id, start_frame, end_frame = row[0], row[1], row[2], row[3], row[4]

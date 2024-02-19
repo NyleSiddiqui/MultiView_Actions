@@ -19,9 +19,9 @@ def weights_init(m):
     if isinstance(m, nn.Linear):
         kaiming_uniform_(m.weight.data)
 
-def build_model(version, input_size, num_views, num_actions):
+def build_model(version, num_views, num_actions):
     if version == 'v3':
-        model = V3(input_size, num_views, num_actions)
+        model = V3(num_views, num_actions)
     model.apply(weights_init)
     return model
 
