@@ -150,11 +150,13 @@ def train_epoch(epoch, data_loader, model, optimizer, ema_optimizer, criterion, 
             
            
             losses.append(loss.item())
-            loss.backward()             
-            optimizer.step()
-            optimizer.zero_grad()
-            ema_optimizer.step()
-                
+            loss.backward()    
+               
+            if (i+1) % 1 == 0:      
+                optimizer.step()
+                optimizer.zero_grad()
+                ema_optimizer.step()
+                    
             losses.append(loss.item())
     
             del sub_loss, act_loss, loss, sa_contrastive_loss, sv_contrastive_loss, actqloss, subqloss, output_subjects, output_actions, features, act_features, sv_features, sv_act_features, sa_features, sa_act_features, clips, sv_clips, sa_clips, targets, actions
@@ -261,7 +263,7 @@ def train_model(cfg, run_id, save_dir, use_cuda, args, writer):
     
     flag = True if args.model_version == 'v3' else False    
     train_data_gen = omniDataLoader(cfg, 'train', transform=transform_train, flag=flag)
-    val_data_gen = omniDataLoader(cfg, 'test', 1.0, 16, transform=transform_test, flag=False)
+    val_data_gen = omniDataLoader(cfg, 'test', 1.0, transform=transform_test, flag=False)
     
     train_dataloader = DataLoader(train_data_gen, batch_size=args.batch_size, shuffle=shuffle, num_workers=args.num_workers, drop_last=True, collate_fn=default_collate)
     val_dataloader = DataLoader(val_data_gen, batch_size=args.batch_size, shuffle=shuffle, num_workers=args.num_workers, drop_last=False, collate_fn=val_collate)
